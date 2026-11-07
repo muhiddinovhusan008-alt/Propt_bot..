@@ -238,20 +238,58 @@ async def download_book_handler(call: CallbackQuery):
 
     file_id = book.get("file_id")
     title = escape_html(book["title"])
+    author = escape_html(book.get("author", ""))
+    grade = escape_html(book.get("grade", ""))
 
     if file_id:
-        # Haqiqiy Telegram Document faylini yuborish
-        await call.message.answer_document(
-            document=file_id,
-            caption=f"📚 <b>{title}</b>\n\n«Bilim Kutubxonasi» orqali yuklab olindi.",
-            parse_mode="HTML"
-        )
-        await call.answer("Kitob yuborildi!")
-    else:
-        # Fayl hozircha serverda fayl sifatida yo'q bo'lsa, namunaviy xabar
+        local_file = BOOKS_DIR / file_id
+        if local_file.exists():
+            # Serverdagi mahalliy elektron darslik / HTML faylini yuborish
+            file_to_send = FSInputFile(
+                path=local_file,
+                filename=file_id
+            )
+            caption = (
+                f"📚 <b>{title}</b>\n\n"
+                f"✍️ <b>Muallif:</b> {author}\n"
+                f"🎓 <b>Sinf/Bosqich:</b> {grade}\n\n"
+                f"✨ <i>«Bilim Kutubxonasi» orqali taqdim etildi.</i>\n"
+                f"📱 <i>Faylni yuklab olib, brauzeringizda (Chrome, Safari va b.) interaktiv tarzda o'qishingiz mumkin!</i>"
+            )
+            await call.message.answer_document(
+                document=file_to_send,
+                caption=caption,
+                parse_mode="HTML"
+            )
+            await call.answer("Kitob muvaffaqiyatli yuborildi!")
+            return
+        else:
+            # Telegram file_id orqali yuborish
+            try:
+                await call.message.answer_document(
+                    document=file_id,
+                    caption=f"📚 <b>{title}</b>\n\n«Bilim Kutubxonasi» orqali yuklab olindi.",
+                    parse_mode="HTML"
+                )
+                await call.answer("Kitob yuborildi!")
+                return
+            except Exception as e:
+                pass
+
+    # Agar fayl serverda ham, Telegramda ham bo'lmasa:
+    file_url = book.get("file_url")
+    if file_url:
         await call.message.answer(
             f"📄 <b>{title}</b>\n\n"
-            f"Ushbu darslik elektron katalogga kiritilgan. Administrator fayl yuklagan zahoti uni to'g'ridan-to'g'ri PDF shaklida yuklab olishingiz mumkin bo'ladi!\n\n"
+            f"Ushbu darslikni quyidagi havola orqali onlayn o'qishingiz yoki PDF nusxasini yuklab olishingiz mumkin:\n"
+            f"🔗 <a href='{file_url}'>Rasmiy elektron nusxani yuklab olish</a>",
+            parse_mode="HTML"
+        )
+        await call.answer()
+    else:
+        await call.message.answer(
+            f"📄 <b>{title}</b>\n\n"
+            f"Ushbu darslik elektron katalogga kiritilgan. Administrator tez orada to'liq PDF faylni ham yuklaydi!\n\n"
             f"<i>Yuklab olishlar hisoblagichi qayd etildi.</i>",
             parse_mode="HTML"
         )

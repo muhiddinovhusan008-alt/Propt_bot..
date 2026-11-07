@@ -202,45 +202,45 @@ async def seed_initial_data(db: aiosqlite.Connection):
         async for r in c:
             subject_map[r["code"]] = r["id"]
 
-    # 2. Namunaviy Kitoblar
+    # 2. Namunaviy Kitoblar (10 ta fan uchun maxsus elektron kitoblar bilan)
     initial_books = [
         # Matematika
-        (subject_map["math"], "Algebra - 7-sinf", "Sh. Alimov", "7-sinf", "Umumiy o'rta ta'lim maktablarining 7-sinfi uchun darslik."),
-        (subject_map["math"], "Geometriya - 8-sinf", "A. Rahimov", "8-sinf", "Planimetriya asoslari va teoremalar."),
-        (subject_map["math"], "Matematika - 5-sinf", "M. Mirzaxmedov", "5-sinf", "Boshlang'ich algebra va arifmetika asoslari."),
+        (subject_map["math"], "Algebra - 7-sinf", "Sh. Alimov", "7-sinf", "Umumiy o'rta ta'lim maktablarining 7-sinfi uchun interaktiv darslik.", "Algebra_7_sinf.html", "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["math"], "Geometriya - 8-sinf", "A. Rahimov", "8-sinf", "Planimetriya asoslari va teoremalar.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["math"], "Matematika - 5-sinf", "M. Mirzaxmedov", "5-sinf", "Boshlang'ich algebra va arifmetika asoslari.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
         # Fizika
-        (subject_map["physics"], "Fizika - 9-sinf", "P. Habibullayev", "9-sinf", "Mexanika, kinematika va dinamika qonuniyatlari."),
-        (subject_map["physics"], "Fizika - 10-sinf", "A. Qosimov", "10-sinf", "Molekulyar fizika va termodinamika asoslari."),
+        (subject_map["physics"], "Fizika - 9-sinf", "P. Habibullayev", "9-sinf", "Mexanika, kinematika va dinamika qonuniyatlari.", "Fizika_8_sinf.html", "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["physics"], "Fizika - 10-sinf", "A. Qosimov", "10-sinf", "Molekulyar fizika va termodinamika asoslari.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
         # Kimyo
-        (subject_map["chemistry"], "Kimyo - 8-sinf", "I. Asqarov", "8-sinf", "Anorganik kimyo asoslari, davriy jadval."),
-        (subject_map["chemistry"], "Kimyo - 9-sinf", "N. To'xtayev", "9-sinf", "Metall va metallmaslar kimyosi."),
+        (subject_map["chemistry"], "Kimyo - 8-sinf", "I. Asqarov", "8-sinf", "Anorganik kimyo asoslari, davriy jadval.", "Kimyo_8_sinf.html", "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["chemistry"], "Kimyo - 9-sinf", "N. To'xtayev", "9-sinf", "Metall va metallmaslar kimyosi.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
         # Biologiya
-        (subject_map["biology"], "Botanika - 6-sinf", "O. Pratov", "6-sinf", "O'simliklar dunyosi va ularning tuzilishi."),
-        (subject_map["biology"], "Zoologiya - 7-sinf", "J. Mavlonov", "7-sinf", "Hayvonot olami, umurtqali va umurtqasizlar."),
-        (subject_map["biology"], "Odam va uning salomatligi - 8-sinf", "B. Aminov", "8-sinf", "Inson anatomiyasi va fiziologiyasi."),
+        (subject_map["biology"], "Zoologiya - 7-sinf", "O. Mavlonov", "7-sinf", "Hayvonot olami, interaktiv savollar va testlar.", "Zoologiya_7_sinf_interaktiv.html", "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["biology"], "Botanika - 6-sinf", "O. Pratov", "6-sinf", "O'simliklar dunyosi va ularning tuzilishi.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["biology"], "Odam va uning salomatligi - 8-sinf", "B. Aminov", "8-sinf", "Inson anatomiyasi va fiziologiyasi.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
         # Tarix
-        (subject_map["history"], "O'zbekiston tarixi - 8-sinf", "A. Muhammadjonov", "8-sinf", "O'rta asrlarda O'zbekiston tarixi, Temuriylar davri."),
-        (subject_map["history"], "Jahon tarixi - 9-sinf", "U. Jo'rayev", "9-sinf", "Yangi davr jahon tarixi voqealari."),
+        (subject_map["history"], "O'zbekiston tarixi - 8-sinf", "A. Muhammadjonov", "8-sinf", "O'rta asrlarda O'zbekiston tarixi, Temuriylar davri.", "Ozbekiston_Tarixi_8_sinf.html", "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["history"], "Jahon tarixi - 9-sinf", "U. Jo'rayev", "9-sinf", "Yangi davr jahon tarixi voqealari.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
         # Ona tili
-        (subject_map["uzbek_lang"], "Ona tili - 7-sinf", "N. Mahmudov", "7-sinf", "Morfologiya, fe'l va so'z turkumlari."),
-        (subject_map["uzbek_lang"], "Ona tili - 9-sinf", "A. Nurmonov", "9-sinf", "Qo'shma gap sintaksisi va tinish belgilari."),
+        (subject_map["uzbek_lang"], "Ona tili - 7-sinf", "N. Mahmudov", "7-sinf", "Morfologiya, fe'l va so'z turkumlari.", "Ona_Tili_7_sinf.html", "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["uzbek_lang"], "Ona tili - 9-sinf", "A. Nurmonov", "9-sinf", "Qo'shma gap sintaksisi va tinish belgilari.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
         # Adabiyot
-        (subject_map["literature"], "Adabiyot - 8-sinf", "S. Ahmedov", "8-sinf", "Mumtoz va zamonaviy o'zbek adabiyoti durdonalari."),
-        (subject_map["literature"], "O'tkan kunlar", "Abdulla Qodiriy", "Barcha sinflar", "O'zbek adabiyotining ilk romani."),
+        (subject_map["literature"], "Adabiyot - 8-sinf", "S. Ahmedov", "8-sinf", "Mumtoz va zamonaviy o'zbek adabiyoti durdonalari.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["literature"], "O'tkan kunlar", "Abdulla Qodiriy", "Barcha sinflar", "O'zbek milliy romanchiligining ilk durdona romani.", "Otkan_Kunlar_Abdulla_Qodiriy.html", "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
         # Ingliz tili
-        (subject_map["english"], "English - Guess What! 5-sinf", "Cambridge / O'zbekiston", "5-sinf", "Ingliz tili boshlang'ich grammatikasi va leksika."),
-        (subject_map["english"], "English Grammar in Use", "Raymond Murphy", "Barcha sinflar", "Ingliz tili grammatikasini o'rganish uchun qo'llanma."),
+        (subject_map["english"], "English Grammar in Use", "Raymond Murphy", "Barcha sinflar", "Ingliz tili grammatikasini o'rganish uchun to'liq interaktiv qo'llanma.", "English_Grammar_in_Use.html", "https://dictionary.cambridge.org/"),
+        (subject_map["english"], "English - Guess What! 5-sinf", "Cambridge / O'zbekiston", "5-sinf", "Ingliz tili boshlang'ich grammatikasi va leksika.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
         # Geografiya
-        (subject_map["geography"], "Materiklar va okeanlar tabiiy geografiyasi - 7-sinf", "P. G'ulomov", "7-sinf", "Yer shari tabiiy zonalari va qit'alari."),
+        (subject_map["geography"], "Materiklar va okeanlar tabiiy geografiyasi - 7-sinf", "P. G'ulomov", "7-sinf", "Yer shari tabiiy zonalari va qit'alari.", "Geografiya_7_sinf.html", "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
         # Informatika
-        (subject_map["informatics"], "Informatika va AT - 8-sinf", "B. Boltayev", "8-sinf", "Algoritmlash va Python dasturlash tili asoslari.")
+        (subject_map["informatics"], "Informatika va AT - 8-sinf", "B. Boltayev", "8-sinf", "Algoritmlash va Python dasturlash tili asoslari.", "Informatika_Python_8_sinf.html", "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari")
     ]
 
-    for sub_id, title, author, grade, desc in initial_books:
+    for sub_id, title, author, grade, desc, file_id, file_url in initial_books:
         await db.execute(
-            """INSERT INTO books (subject_id, title, author, grade, description)
-               VALUES (?, ?, ?, ?, ?)""",
-            (sub_id, title, author, grade, desc)
+            """INSERT INTO books (subject_id, title, author, grade, description, file_id, file_url)
+               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            (sub_id, title, author, grade, desc, file_id, file_url)
         )
 
     # 3. Test savollari

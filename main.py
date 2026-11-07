@@ -139,6 +139,58 @@ def create_bot_and_dispatcher():
     return bot, dp
 
 
+async def on_polling_startup(app: web.Application):
+    """Polling rejimida ishga tushganda bazani ishga tushirish va polling taskini yaratish."""
+    bot: Bot = app["bot"]
+    dp: Dispatcher = app["dp"]
+
+    logger.info("Ma'lumotlar bazasi initsializatsiya qilinmoqda...")
+    await init_db()
+    logger.info("Ma'lumotlar bazasi tayyor!")
+
+    try:
+        await bot.delete_webhook(drop_pending_updates=True)
+        logger.info("Eski webhooklar tozalandi.")
+    except Exception as e:
+        logger.warning(f"Webhook tozalashda ogohlantirish: {e}")
+
+    try:
+        bot_info = await bot.get_me()
+        logger.info(f"Bot muvaffaqiyatli ulandi (Polling rejim): @{bot_info.username} ({bot_info.first_name})")
+        for admin_id in ADMIN_IDS:
+            try:
+                await bot.send_message(
+                    chat_id=admin_id,
+                    text=f"🚀 <b>«Bilim Kutubxonasi» boti ishga tushirildi!</b>\n"
+                         f"🤖 Bot: @{bot_info.username}\n"
+                         f"🌐 Rejim: <b>Polling + Render Web Server (Port {PORT})</b>",
+                    parse_mode=ParseMode.HTML
+                )
+            except Exception:
+                pass
+    except Exception as e:
+        logger.warning(f"Bot ma'lumotlarini olishda ogohlantirish: {e}")
+
+    # Pollingni fon vazifasi sifatida ishga tushirish
+    app["polling_task"] = asyncio.create_task(dp.start_polling(bot))
+
+
+async def on_polling_shutdown(app: web.Application):
+    """Polling fon vazifasini va sessiyani to'xtatish."""
+    logger.info("Bot (Polling) to'xtatilmoqda...")
+    task = app.get("polling_task")
+    if task:
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+
+    bot: Bot = app.get("bot")
+    if bot:
+        await bot.session.close()
+
+
 def main():
     """Asosiy ishga tushirish funksiyasi."""
     if not BOT_TOKEN or "YOUR_" in BOT_TOKEN:
@@ -152,15 +204,17 @@ def main():
 
     bot, dp = create_bot_and_dispatcher()
 
+    app = web.Application()
+    app["bot"] = bot
+    app["dp"] = dp
+
+    # Health check yo'nalishlari (Render va monitoring tizimlari uchun)
+    app.router.add_get("/", health_check)
+    app.router.add_get("/health", health_check)
+
     if WEBHOOK_URL:
         # ==================== RENDER FREE WEB SERVICE (WEBHOOK REJIMI) ====================
-        logger.info(f"Render Free Web Service Webhook rejimida ishga tushirilmoqda. Port: {PORT}")
-
-        app = web.Application()
-
-        # Health check yo'nalishlari
-        app.router.add_get("/", health_check)
-        app.router.add_get("/health", health_check)
+        logger.info(f"Render Free Web Service Webhook rejimida ishga tushirilmoqda. URL: {WEBHOOK_URL}, Port: {PORT}")
 
         # Telegram yangilanishlarini qabul qiluvchi Webhook handler
         webhook_requests_handler = SimpleRequestHandler(
@@ -172,24 +226,15 @@ def main():
 
         # aiogram ilovasini aiohttp bilan integratsiyalash
         setup_application(app, dp, bot=bot)
-
-        # Veb-serverni ishga tushirish
-        web.run_app(app, host=HOST, port=PORT)
     else:
-        # ==================== LOKAL / STANDART POLLING REJIMI ====================
-        logger.info("WEBHOOK_URL topilmadi. Bot lokal Polling rejimida ishga tushmoqda...")
+        # ==================== GIBRID REJIM (WEB SERVER + POLLING) ====================
+        # Renderda port yopilib qolmasligi va healthcheck yiqilmasligi uchun veb-server va polling birga ishlaydi
+        logger.info(f"WEBHOOK_URL aniqlanmadi. Veb-server va Polling gibrid rejimida ishga tushmoqda. Port: {PORT}")
+        app.on_startup.append(on_polling_startup)
+        app.on_shutdown.append(on_polling_shutdown)
 
-        async def run_polling():
-            try:
-                await bot.delete_webhook(drop_pending_updates=True)
-            except Exception as e:
-                logger.warning(f"Webhook tozalashda ogohlantirish: {e}")
-            await dp.start_polling(bot)
-
-        try:
-            asyncio.run(run_polling())
-        except (KeyboardInterrupt, SystemExit):
-            logger.info("Bot qo'lda to'xtatildi.")
+    # Har qanday holatda Render kutgan PORT da veb-serverni ishga tushirish
+    web.run_app(app, host=HOST, port=PORT)
 
 
 if __name__ == "__main__":
