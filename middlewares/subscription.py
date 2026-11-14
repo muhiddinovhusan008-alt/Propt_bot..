@@ -32,6 +32,10 @@ class InstagramSubscriptionMiddleware(BaseMiddleware):
             username=user.username
         )
 
+        # Agar administrator bo'lsa, obuna tekshiruvisiz to'g'ridan-to'g'ri o'tkaziladi
+        if is_admin(user_id):
+            return await handler(event, data)
+
         # Agar foydalanuvchi "Obunani tasdiqlash" tugmasini bosayotgan bo'lsa, o'tkaziladi
         if isinstance(event, CallbackQuery) and event.data == "check_insta_sub":
             return await handler(event, data)

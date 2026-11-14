@@ -85,23 +85,24 @@ async def cmd_start(message: Message, state: FSMContext):
     await get_or_create_user(user_id=user_id, full_name=full_name, username=username)
     admin_flag = is_admin(user_id)
 
-    # Instagram obunasi tekshiruvi
-    is_sub = await is_user_subscribed_insta(user_id)
-    if not is_sub:
-        sub_text = (
-            f"Assalomu alaykum, <b>{escape_html(full_name)}</b>!\n\n"
-            f"<b>«BILIM KUTUBXONASI»</b> platformasiga xush kelibsiz! 🎓\n\n"
-            f"⚠️ <b>Botdan to‘liq foydalanish uchun bizning rasmiy Instagram sahifamizga obuna bo‘lishingiz kerak!</b>\n\n"
-            f"1️⃣ Pastdagi <b>«📲 Instagram sahifaga obuna bo‘lish»</b> tugmasi orqali sahifamizga o‘ting va obuna bo‘ling;\n"
-            f"2️⃣ So‘ngra <b>«✅ Obunani tasdiqlash»</b> tugmasini bosing."
-        )
-        await message.answer(
-            text=sub_text,
-            reply_markup=get_instagram_sub_keyboard(),
-            parse_mode="HTML",
-            disable_web_page_preview=True
-        )
-        return
+    # Instagram obunasi tekshiruvi (administrator bo'lmasa tekshiriladi)
+    if not admin_flag:
+        is_sub = await is_user_subscribed_insta(user_id)
+        if not is_sub:
+            sub_text = (
+                f"Assalomu alaykum, <b>{escape_html(full_name)}</b>!\n\n"
+                f"<b>«BILIM KUTUBXONASI»</b> platformasiga xush kelibsiz! 🎓\n\n"
+                f"⚠️ <b>Botdan to‘liq foydalanish uchun bizning rasmiy Instagram sahifamizga obuna bo‘lishingiz kerak!</b>\n\n"
+                f"1️⃣ Pastdagi <b>«📲 Instagram sahifaga obuna bo‘lish»</b> tugmasi orqali sahifamizga o‘ting va obuna bo‘ling;\n"
+                f"2️⃣ So‘ngra <b>«✅ Obunani tasdiqlash»</b> tugmasini bosing."
+            )
+            await message.answer(
+                text=sub_text,
+                reply_markup=get_instagram_sub_keyboard(),
+                parse_mode="HTML",
+                disable_web_page_preview=True
+            )
+            return
 
     welcome_text = (
         f"Assalomu alaykum, <b>{escape_html(full_name)}</b>!\n\n"
