@@ -210,6 +210,82 @@ async def increment_book_downloads(book_id: int):
         await db.commit()
 
 
+async def delete_book(book_id: int) -> bool:
+    """Kitobni bazadan o'chirish."""
+    async with get_db() as db:
+        cursor = await db.execute("DELETE FROM books WHERE id = ?", (book_id,))
+        await db.commit()
+        return cursor.rowcount > 0
+
+
+async def update_book(
+    book_id: int,
+    title: Optional[str] = None,
+    grade: Optional[str] = None,
+    description: Optional[str] = None,
+    file_id: Optional[str] = None,
+    file_url: Optional[str] = None,
+    subject_id: Optional[int] = None
+) -> bool:
+    """Kitob ma'lumotlarini yangilash."""
+    async with get_db() as db:
+        fields = []
+        values = []
+        if title is not None:
+            fields.append("title = ?")
+            values.append(title)
+        if grade is not None:
+            fields.append("grade = ?")
+            values.append(grade)
+        if description is not None:
+            fields.append("description = ?")
+            values.append(description)
+        if file_id is not None:
+            fields.append("file_id = ?")
+            values.append(file_id)
+        if file_url is not None:
+            fields.append("file_url = ?")
+            values.append(file_url)
+        if subject_id is not None:
+            fields.append("subject_id = ?")
+            values.append(subject_id)
+
+        if not fields:
+            return False
+
+        values.append(book_id)
+        query = f"UPDATE books SET {', '.join(fields)} WHERE id = ?"
+        cursor = await db.execute(query, tuple(values))
+        await db.commit()
+        return cursor.rowcount > 0
+
+
+async def get_all_books(limit: int = 30, offset: int = 0, subject_id: Optional[int] = None, grade: Optional[str] = None) -> List[Dict[str, Any]]:
+    """Barcha kitoblarni olish (admin va katalog uchun)."""
+    async with get_db() as db:
+        query = """SELECT b.*, s.name as subject_name, s.icon as subject_icon 
+                   FROM books b 
+                   JOIN subjects s ON b.subject_id = s.id """
+        conditions = []
+        params = []
+        if subject_id:
+            conditions.append("b.subject_id = ?")
+            params.append(subject_id)
+        if grade:
+            conditions.append("(b.grade = ? OR b.grade LIKE ?)")
+            params.extend([grade, f"%{grade}%"])
+
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
+
+        query += " ORDER BY b.id DESC LIMIT ? OFFSET ?"
+        params.extend([limit, offset])
+
+        cursor = await db.execute(query, tuple(params))
+        rows = await cursor.fetchall()
+        return [dict(row) for row in rows]
+
+
 # ==================== TEST SAVOLLARI VA TEST TIZIMI ====================
 
 async def get_questions_by_subject(subject_id: int, limit: int = 10) -> List[Dict[str, Any]]:

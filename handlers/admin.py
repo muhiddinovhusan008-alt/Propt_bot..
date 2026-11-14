@@ -15,6 +15,10 @@ from aiogram.types import InlineKeyboardButton
 from database import (
     get_bot_statistics,
     add_book,
+    delete_book,
+    update_book,
+    get_all_books,
+    get_book_by_id,
     add_question,
     get_questions_by_subject,
     delete_question,
@@ -27,12 +31,17 @@ from database import (
 from keyboards import (
     get_admin_main_keyboard,
     get_admin_cancel_keyboard,
+    get_admin_books_list_keyboard,
+    get_admin_edit_fields_keyboard,
+    get_admin_confirm_delete_keyboard,
     get_subjects_keyboard,
     get_grades_keyboard,
     get_main_keyboard
 )
 from states import (
     AdminAddBookStates,
+    AdminEditBookStates,
+    AdminDeleteBookStates,
     AdminAddQuestionStates,
     AdminAddFactStates,
     AdminAddDailyQuestionStates,
@@ -256,6 +265,361 @@ async def process_book_file(message: Message, state: FSMContext):
         f"📖 <b>Nomi:</b> {escape_html(data['title'])}\n"
         f"📝 <b>Tavsif:</b> {escape_html(data.get('description') or 'Kiritilmagan')}\n"
         f"📎 <b>PDF Fayl:</b> {'Biriktirildi ✅' if file_id else (file_url if file_url else 'Faylsiz')}",
+        reply_markup=get_admin_main_keyboard(),
+        parse_mode="HTML"
+    )
+
+
+# ==================== BARCHA KITOBLARNI KO'RISH ====================
+
+@router.callback_query(F.data.startswith("admin:view_all:"))
+async def view_all_books(call: CallbackQuery):
+    """Barcha mavjud kitoblar ro'yxatini ko'rish."""
+    if not is_admin(call.from_user.id):
+        await call.answer("Ruxsat yo'q!", show_alert=True)
+        return
+
+    offset = int(call.data.split(":")[2])
+    books = await get_all_books(limit=8, offset=offset)
+
+    if not books and offset == 0:
+        builder = InlineKeyboardBuilder()
+        builder.button(text="🔙 Admin panelga", callback_data="admin:menu")
+        await call.message.edit_text(
+            "<b>📖 BARCHA KITOBLAR</b>\n\nHozircha bazada kitoblar mavjud emas.",
+            reply_markup=builder.as_markup(),
+            parse_mode="HTML"
+        )
+        await call.answer()
+        return
+
+    page_num = (offset // 8) + 1
+    text = (
+        f"<b>📖 BARCHA DARSLIK VA KITOBLAR (Sahifa {page_num})</b>\n\n"
+        f"Kitob haqida to'liq ma'lumot olish yoki boshqarish uchun ustiga bosing:"
+    )
+    await call.message.edit_text(
+        text,
+        reply_markup=get_admin_books_list_keyboard(books, offset=offset, action_type="view"),
+        parse_mode="HTML"
+    )
+    await call.answer()
+
+
+@router.callback_query(F.data.startswith("adm_books_page:"))
+async def switch_books_page(call: CallbackQuery):
+    """Kitoblar ro'yxati sahifasini almashtirish."""
+    if not is_admin(call.from_user.id):
+        return
+
+    parts = call.data.split(":")
+    action_type = parts[1]
+    offset = int(parts[2])
+    sub_id = int(parts[3]) if len(parts) > 3 and parts[3] != "0" else None
+
+    books = await get_all_books(limit=8, offset=offset, subject_id=sub_id)
+    page_num = (offset // 8) + 1
+
+    titles = {
+        "view": f"<b>📖 BARCHA DARSLIK VA KITOBLAR (Sahifa {page_num})</b>",
+        "delete": f"<b>🗑 KITOBNI O'CHIRISH (Sahifa {page_num})</b>\n\nO'chirmoqchi bo'lgan kitobingizni tanlang:",
+        "edit": f"<b>✏️ KITOBNI TAHRIRLASH (Sahifa {page_num})</b>\n\nTahrirlamoqchi bo'lgan kitobingizni tanlang:"
+    }
+    header = titles.get(action_type, f"Kitoblar ro'yxati (Sahifa {page_num})")
+
+    await call.message.edit_text(
+        header,
+        reply_markup=get_admin_books_list_keyboard(books, offset=offset, action_type=action_type, subject_id=sub_id),
+        parse_mode="HTML"
+    )
+    await call.answer()
+
+
+@router.callback_query(F.data.startswith("adm_book_act:"))
+async def handle_admin_book_action(call: CallbackQuery):
+    """Kitob tanlanganda (ko'rish, o'chirish yoki tahrirlash)."""
+    if not is_admin(call.from_user.id):
+        return
+
+    parts = call.data.split(":")
+    action_type = parts[1]
+    book_id = int(parts[2])
+
+    book = await get_book_by_id(book_id)
+    if not book:
+        await call.answer("Kitob topilmadi!", show_alert=True)
+        return
+
+    title = escape_html(book["title"])
+    author = escape_html(book.get("author", "Noma'lum"))
+    subject_name = escape_html(book.get("subject_name", "Fan"))
+    grade = escape_html(book.get("grade", ""))
+    desc = escape_html(book.get("description") or "Kiritilmagan")
+    downloads = book.get("downloads_count", 0)
+    has_pdf = bool(book.get("file_id")) or bool(book.get("file_url"))
+
+    if action_type == "view":
+        text = (
+            f"<b>📖 KITOB TAFSILOTLARI (ID: {book_id})</b>\n\n"
+            f"📖 <b>Nomi:</b> {title}\n"
+            f"✍️ <b>Muallif:</b> {author}\n"
+            f"📂 <b>Fan:</b> {subject_name}\n"
+            f"🎓 <b>Sinf:</b> {grade}\n"
+            f"📥 <b>Yuklab olingan:</b> {downloads} marta\n"
+            f"📎 <b>PDF Fayl:</b> {'Biriktirilgan ✅' if has_pdf else 'Mavjud emas ❌'}\n\n"
+            f"📝 <b>Tavsif:</b>\n<i>{desc}</i>"
+        )
+        builder = InlineKeyboardBuilder()
+        builder.button(text="✏️ Tahrirlash", callback_data=f"adm_book_act:edit:{book_id}")
+        builder.button(text="🗑 O'chirish", callback_data=f"adm_book_act:delete:{book_id}")
+        builder.button(text="🔙 Kitoblar ro'yxatiga", callback_data="admin:view_all:0")
+        builder.button(text="🔙 Admin panelga", callback_data="admin:menu")
+        builder.adjust(2, 1, 1)
+
+        await call.message.edit_text(text, reply_markup=builder.as_markup(), parse_mode="HTML")
+        await call.answer()
+
+    elif action_type == "delete":
+        text = (
+            f"<b>🗑 KITOBNI O'CHIRISHNI TASDIQLAYSIZMI?</b>\n\n"
+            f"📖 <b>Nomi:</b> {title}\n"
+            f"📂 <b>Fan:</b> {subject_name}\n"
+            f"🎓 <b>Sinf:</b> {grade}\n\n"
+            f"⚠️ <i>Haqiqatan ham ushbu kitobni o'chirib tashlamoqchimisiz? Ushbu amalni bekor qilib bo'lmaydi!</i>"
+        )
+        await call.message.edit_text(text, reply_markup=get_admin_confirm_delete_keyboard(book_id), parse_mode="HTML")
+        await call.answer()
+
+    elif action_type == "edit":
+        text = (
+            f"<b>✏️ KITOBNI TAHRIRLASH (ID: {book_id})</b>\n\n"
+            f"📖 <b>Nomi:</b> {title}\n"
+            f"📂 <b>Fan:</b> {subject_name}\n"
+            f"🎓 <b>Sinf:</b> {grade}\n"
+            f"📎 <b>PDF:</b> {'Mavjud ✅' if has_pdf else 'Mavjud emas ❌'}\n"
+            f"📝 <b>Tavsif:</b> <i>{desc}</i>\n\n"
+            f"<i>Qaysi ma'lumotni o'zgartirmoqchisiz? Quyidagilardan birini tanlang:</i>"
+        )
+        await call.message.edit_text(text, reply_markup=get_admin_edit_fields_keyboard(book_id), parse_mode="HTML")
+        await call.answer()
+
+
+# ==================== KITOBNI O'CHIRISH ====================
+
+@router.callback_query(F.data == "admin:del_book_menu")
+async def show_delete_books_menu(call: CallbackQuery):
+    """O'chirish uchun kitoblar ro'yxati."""
+    if not is_admin(call.from_user.id):
+        await call.answer("Ruxsat yo'q!", show_alert=True)
+        return
+
+    books = await get_all_books(limit=8, offset=0)
+    if not books:
+        builder = InlineKeyboardBuilder()
+        builder.button(text="🔙 Admin panelga", callback_data="admin:menu")
+        await call.message.edit_text(
+            "<b>🗑 KITOBNI O'CHIRISH</b>\n\nBazada o'chirish uchun kitoblar mavjud emas.",
+            reply_markup=builder.as_markup(),
+            parse_mode="HTML"
+        )
+        await call.answer()
+        return
+
+    text = (
+        "<b>🗑 KITOBNI O'CHIRISH BO'LIMI</b>\n\n"
+        "O'chirmoqchi bo'lgan kitobingiz ustiga bosing:"
+    )
+    await call.message.edit_text(
+        text,
+        reply_markup=get_admin_books_list_keyboard(books, offset=0, action_type="delete"),
+        parse_mode="HTML"
+    )
+    await call.answer()
+
+
+@router.callback_query(F.data.startswith("adm_do_delete:"))
+async def confirm_and_delete_book(call: CallbackQuery):
+    """Kitobni bazadan o'chirishni ijro etish."""
+    if not is_admin(call.from_user.id):
+        return
+
+    book_id = int(call.data.split(":")[1])
+    success = await delete_book(book_id)
+
+    if success:
+        await call.answer("✅ Kitob muvaffaqiyatli o'chirildi!", show_alert=True)
+    else:
+        await call.answer("❌ Kitob topilmadi yoki allaqachon o'chirilgan.", show_alert=True)
+
+    # Qayta o'chirish ro'yxatiga qaytish
+    await show_delete_books_menu(call)
+
+
+# ==================== KITOBNI TAHRIRLASH ====================
+
+@router.callback_query(F.data == "admin:edit_book_menu")
+async def show_edit_books_menu(call: CallbackQuery):
+    """Tahrirlash uchun kitoblar ro'yxati."""
+    if not is_admin(call.from_user.id):
+        await call.answer("Ruxsat yo'q!", show_alert=True)
+        return
+
+    books = await get_all_books(limit=8, offset=0)
+    if not books:
+        builder = InlineKeyboardBuilder()
+        builder.button(text="🔙 Admin panelga", callback_data="admin:menu")
+        await call.message.edit_text(
+            "<b>✏️ KITOBNI TAHRIRLASH</b>\n\nBazada tahrirlash uchun kitoblar mavjud emas.",
+            reply_markup=builder.as_markup(),
+            parse_mode="HTML"
+        )
+        await call.answer()
+        return
+
+    text = (
+        "<b>✏️ KITOBNI TAHRIRLASH BO'LIMI</b>\n\n"
+        "Tahrirlamoqchi bo'lgan kitobingiz ustiga bosing:"
+    )
+    await call.message.edit_text(
+        text,
+        reply_markup=get_admin_books_list_keyboard(books, offset=0, action_type="edit"),
+        parse_mode="HTML"
+    )
+    await call.answer()
+
+
+@router.callback_query(F.data.startswith("adm_edit_field:"))
+async def start_edit_field(call: CallbackQuery, state: FSMContext):
+    """Kitobning tanlangan maydonini tahrirlashni boshlash."""
+    if not is_admin(call.from_user.id):
+        return
+
+    parts = call.data.split(":")
+    book_id = int(parts[1])
+    field = parts[2]
+
+    await state.update_data(edit_book_id=book_id)
+
+    if field == "title":
+        await state.set_state(AdminEditBookStates.waiting_for_new_title)
+        await call.message.edit_text(
+            "✏️ Kitobning <b>yangi to'liq nomini</b> kiriting:",
+            reply_markup=get_admin_cancel_keyboard(),
+            parse_mode="HTML"
+        )
+    elif field == "grade":
+        await state.set_state(AdminEditBookStates.waiting_for_new_grade)
+        await call.message.edit_text(
+            "🎓 Kitob uchun <b>yangi sinfni</b> tanlang:",
+            reply_markup=get_grades_keyboard(subject_id=0, action_prefix="adm_set_grade"),
+            parse_mode="HTML"
+        )
+    elif field == "desc":
+        await state.set_state(AdminEditBookStates.waiting_for_new_desc)
+        await call.message.edit_text(
+            "📝 Kitob uchun <b>yangi tavsif</b> kiriting (yoki '.' deb yuboring):",
+            reply_markup=get_admin_cancel_keyboard(),
+            parse_mode="HTML"
+        )
+    elif field == "file":
+        await state.set_state(AdminEditBookStates.waiting_for_new_file)
+        await call.message.edit_text(
+            "📎 Kitobning <b>yangi PDF faylini</b> (Hujjat/Document ko'rinishida) yuboring:",
+            reply_markup=get_admin_cancel_keyboard(),
+            parse_mode="HTML"
+        )
+    await call.answer()
+
+
+@router.message(AdminEditBookStates.waiting_for_new_title)
+async def process_new_book_title(message: Message, state: FSMContext):
+    """Yangi kitob nomini saqlash."""
+    new_title = message.text.strip()
+    data = await state.get_data()
+    book_id = data.get("edit_book_id")
+
+    await update_book(book_id=book_id, title=new_title)
+    await state.clear()
+    await message.answer(
+        f"✅ Kitob nomi muvaffaqiyatli yangilandi:\n<b>{escape_html(new_title)}</b>",
+        reply_markup=get_admin_main_keyboard(),
+        parse_mode="HTML"
+    )
+
+
+@router.callback_query(AdminEditBookStates.waiting_for_new_grade, F.data.startswith("adm_set_grade:"))
+async def process_new_book_grade_cb(call: CallbackQuery, state: FSMContext):
+    """Yangi sinf inline tugma orqali tanlandi."""
+    parts = call.data.split(":")
+    new_grade = parts[2] if len(parts) > 2 else "Barcha sinflar"
+    data = await state.get_data()
+    book_id = data.get("edit_book_id")
+
+    await update_book(book_id=book_id, grade=new_grade)
+    await state.clear()
+    await call.message.edit_text(
+        f"✅ Kitob sinfi muvaffaqiyatli yangilandi: <b>{escape_html(new_grade)}</b>",
+        reply_markup=get_admin_main_keyboard(),
+        parse_mode="HTML"
+    )
+    await call.answer()
+
+
+@router.message(AdminEditBookStates.waiting_for_new_grade)
+async def process_new_book_grade_msg(message: Message, state: FSMContext):
+    """Yangi sinf matn orqali kiritildi."""
+    new_grade = message.text.strip()
+    data = await state.get_data()
+    book_id = data.get("edit_book_id")
+
+    await update_book(book_id=book_id, grade=new_grade)
+    await state.clear()
+    await message.answer(
+        f"✅ Kitob sinfi muvaffaqiyatli yangilandi: <b>{escape_html(new_grade)}</b>",
+        reply_markup=get_admin_main_keyboard(),
+        parse_mode="HTML"
+    )
+
+
+@router.message(AdminEditBookStates.waiting_for_new_desc)
+async def process_new_book_desc(message: Message, state: FSMContext):
+    """Yangi tavsifni saqlash."""
+    new_desc = message.text.strip()
+    if new_desc == ".":
+        new_desc = ""
+    data = await state.get_data()
+    book_id = data.get("edit_book_id")
+
+    await update_book(book_id=book_id, description=new_desc)
+    await state.clear()
+    await message.answer(
+        f"✅ Kitob tavsifi muvaffaqiyatli yangilandi:\n<i>{escape_html(new_desc or 'Bo‘sh')}</i>",
+        reply_markup=get_admin_main_keyboard(),
+        parse_mode="HTML"
+    )
+
+
+@router.message(AdminEditBookStates.waiting_for_new_file)
+async def process_new_book_file(message: Message, state: FSMContext):
+    """Yangi PDF faylni saqlash."""
+    data = await state.get_data()
+    book_id = data.get("edit_book_id")
+
+    file_id = None
+    file_url = None
+    if message.document:
+        file_id = message.document.file_id
+    elif message.text and (message.text.startswith("http://") or message.text.startswith("https://")):
+        file_url = message.text.strip()
+
+    if not file_id and not file_url:
+        await message.answer("Iltimos, PDF hujjat yoki havola yuboring (yoki bekor qilish tugmasini bosing):")
+        return
+
+    await update_book(book_id=book_id, file_id=file_id, file_url=file_url)
+    await state.clear()
+    await message.answer(
+        "✅ Kitob PDF fayli muvaffaqiyatli yangilandi va saqlandi!",
         reply_markup=get_admin_main_keyboard(),
         parse_mode="HTML"
     )

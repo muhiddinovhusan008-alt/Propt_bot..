@@ -194,17 +194,67 @@ def get_profile_keyboard() -> InlineKeyboardMarkup:
 
 
 def get_admin_main_keyboard() -> InlineKeyboardMarkup:
-    """Admin boshqaruv paneli menyusi."""
+    """Admin maxsus boshqaruv paneli menyusi."""
     builder = InlineKeyboardBuilder()
-    builder.button(text="📊 To'liq statistika", callback_data="admin:stats")
-    builder.button(text="📚 Kitob / PDF yuklash", callback_data="admin:add_book")
-    builder.button(text="📝 Test savoli qo'shish", callback_data="admin:add_question")
-    builder.button(text="🗑 Test savolini o'chirish", callback_data="admin:del_question")
-    builder.button(text="💡 Ilmiy fakt qo'shish", callback_data="admin:add_fact")
-    builder.button(text="❓ Kunlik savol qo'shish", callback_data="admin:add_daily_q")
-    builder.button(text="📢 Barchaga xabar (Broadcast)", callback_data="admin:broadcast")
+    builder.button(text="📚 Kitob qo‘shish", callback_data="admin:add_book")
+    builder.button(text="🗑 Kitobni o‘chirish", callback_data="admin:del_book_menu")
+    builder.button(text="✏️ Kitobni tahrirlash", callback_data="admin:edit_book_menu")
+    builder.button(text="📖 Barcha kitoblarni ko‘rish", callback_data="admin:view_all:0")
+    builder.button(text="📊 Statistika", callback_data="admin:stats")
+    builder.adjust(2, 2, 1)
+    builder.row(InlineKeyboardButton(text="🏠 Asosiy menyu", callback_data="back_to_main"))
+    return builder.as_markup()
+
+
+def get_admin_books_list_keyboard(
+    books: List[Dict[str, Any]],
+    offset: int = 0,
+    action_type: str = "view",
+    subject_id: Optional[int] = None
+) -> InlineKeyboardMarkup:
+    """Admin kitoblar ro'yxati (ko'rish, o'chirish yoki tahrirlash uchun)."""
+    builder = InlineKeyboardBuilder()
+
+    for book in books:
+        prefix = "📖" if action_type == "view" else ("🗑" if action_type == "delete" else "✏️")
+        btn_text = f"{prefix} {book['title']} ({book['grade']})"
+        builder.button(text=btn_text, callback_data=f"adm_book_act:{action_type}:{book['id']}")
+
+    builder.adjust(1)
+
+    # Sahifalash (Pagination) tugmalari
+    nav_btns = []
+    if offset >= 8:
+        nav_btns.append(InlineKeyboardButton(text="⬅️ Oldingi", callback_data=f"adm_books_page:{action_type}:{offset - 8}:{subject_id or 0}"))
+    if len(books) == 8:
+        nav_btns.append(InlineKeyboardButton(text="Keyingi ➡️", callback_data=f"adm_books_page:{action_type}:{offset + 8}:{subject_id or 0}"))
+
+    if nav_btns:
+        builder.row(*nav_btns)
+
+    builder.row(InlineKeyboardButton(text="🔙 Admin panelga", callback_data="admin:menu"))
+    return builder.as_markup()
+
+
+def get_admin_edit_fields_keyboard(book_id: int) -> InlineKeyboardMarkup:
+    """Kitobni tahrirlashda qaysi maydonni o'zgartirishni tanlash."""
+    builder = InlineKeyboardBuilder()
+    builder.button(text="✏️ Nomini o'zgartirish", callback_data=f"adm_edit_field:{book_id}:title")
+    builder.button(text="🎓 Sinfini o'zgartirish", callback_data=f"adm_edit_field:{book_id}:grade")
+    builder.button(text="📝 Tavsifini o'zgartirish", callback_data=f"adm_edit_field:{book_id}:desc")
+    builder.button(text="📎 PDF faylni yangilash", callback_data=f"adm_edit_field:{book_id}:file")
     builder.adjust(2)
-    builder.row(InlineKeyboardButton(text="🔙 Asosiy menyuga qaytish", callback_data="back_to_main"))
+    builder.row(InlineKeyboardButton(text="🔙 Kitoblar ro'yxatiga", callback_data="admin:edit_book_menu"))
+    builder.row(InlineKeyboardButton(text="🔙 Admin panelga", callback_data="admin:menu"))
+    return builder.as_markup()
+
+
+def get_admin_confirm_delete_keyboard(book_id: int) -> InlineKeyboardMarkup:
+    """Kitobni o'chirishni tasdiqlash klaviaturasi."""
+    builder = InlineKeyboardBuilder()
+    builder.button(text="🗑 Ha, o'chirilsin", callback_data=f"adm_do_delete:{book_id}")
+    builder.button(text="❌ Bekor qilish", callback_data="admin:del_book_menu")
+    builder.adjust(2)
     return builder.as_markup()
 
 

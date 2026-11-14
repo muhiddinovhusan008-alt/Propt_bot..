@@ -16,14 +16,17 @@ load_dotenv(BASE_DIR / ".env")
 # Telegram Bot Token
 BOT_TOKEN = os.getenv("BOT_TOKEN", "").strip()
 
-# Adminlar ID ro'yxati (masalan: "123456,7891011" -> [123456, 7891011])
+# Administratorlarning Telegram ID raqamlari (Faqat 9202952114)
+PRIMARY_ADMIN_ID = 9202952114
 admin_ids_raw = os.getenv("ADMIN_IDS", "").strip()
-ADMIN_IDS = []
+ADMIN_IDS = [PRIMARY_ADMIN_ID]
 if admin_ids_raw:
     for item in admin_ids_raw.split(","):
         item = item.strip()
         if item.isdigit():
-            ADMIN_IDS.append(int(item))
+            val = int(item)
+            if val not in ADMIN_IDS:
+                ADMIN_IDS.append(val)
 
 # Baza fayli joylashuvi
 DB_PATH = BASE_DIR / os.getenv("DATABASE_PATH", "database/bilim_kutubxonasi.db")

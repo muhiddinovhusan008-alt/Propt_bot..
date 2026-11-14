@@ -35,6 +35,17 @@ class AdminAddBookStates(StatesGroup):
     waiting_for_file = State()
 
 
+class AdminEditBookStates(StatesGroup):
+    waiting_for_new_title = State()
+    waiting_for_new_grade = State()
+    waiting_for_new_desc = State()
+    waiting_for_new_file = State()
+
+
+class AdminDeleteBookStates(StatesGroup):
+    waiting_for_confirm = State()
+
+
 class AdminAddQuestionStates(StatesGroup):
     waiting_for_subject = State()
     waiting_for_question_text = State()
