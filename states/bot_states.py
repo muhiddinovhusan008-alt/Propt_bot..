@@ -29,9 +29,8 @@ class InstagramVerifyStates(StatesGroup):
 # Admin uchun holatlar
 class AdminAddBookStates(StatesGroup):
     waiting_for_subject = State()
-    waiting_for_title = State()
-    waiting_for_author = State()
     waiting_for_grade = State()
+    waiting_for_title = State()
     waiting_for_desc = State()
     waiting_for_file = State()
 

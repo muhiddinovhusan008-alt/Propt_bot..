@@ -42,57 +42,86 @@ def get_subjects_keyboard(action_prefix: str = "sub_lib") -> InlineKeyboardMarku
         # Qidirish tugmasi
         builder.row(InlineKeyboardButton(text="🔍 Kitob qidirish", callback_data="search_books"))
 
-    builder.row(InlineKeyboardButton(text="🔙 Asosiy menyu", callback_data="back_to_main"))
+    builder.row(InlineKeyboardButton(text="🏠 Asosiy menyu", callback_data="back_to_main"))
 
     return builder.as_markup()
 
 
-def get_books_keyboard(books: List[Dict[str, Any]], subject_id: int) -> InlineKeyboardMarkup:
-    """Fanga tegishli kitoblar ro'yxati inline tugmalari."""
+def get_grades_keyboard(subject_id: int, action_prefix: str = "lib_grade") -> InlineKeyboardMarkup:
+    """
+    Sinflar menyusi (5-11-sinflar) 2 ustunli qulay mobil dizaynda.
+    action_prefix:
+    - 'lib_grade': Foydalanuvchi kutubxona sinfini tanlashi uchun
+    - 'adm_book_grade': Admin yangi kitob sinfini tanlashi uchun
+    """
+    builder = InlineKeyboardBuilder()
+    grades = ["5-sinf", "6-sinf", "7-sinf", "8-sinf", "9-sinf", "10-sinf", "11-sinf"]
+
+    for gr in grades:
+        builder.button(text=f"🎓 {gr}", callback_data=f"{action_prefix}:{subject_id}:{gr}")
+
+    builder.adjust(2)  # 2 ustunli chiroyli mobil ko'rinish
+
+    if action_prefix == "adm_book_grade":
+        builder.row(InlineKeyboardButton(text="❌ Bekor qilish", callback_data="admin:cancel"))
+    else:
+        builder.row(InlineKeyboardButton(text="⬅️ Fanlar ro'yxatiga", callback_data="back_to_subjects_lib"))
+        builder.row(InlineKeyboardButton(text="🏠 Asosiy menyu", callback_data="back_to_main"))
+
+    return builder.as_markup()
+
+
+def get_books_keyboard(books: List[Dict[str, Any]], subject_id: int, grade: str = "") -> InlineKeyboardMarkup:
+    """Aynan tanlangan fan va sinfga biriktirilgan kitoblar ro'yxati."""
     builder = InlineKeyboardBuilder()
 
     for book in books:
-        # Kitob nomi va sinfi
-        title_btn = f"📖 {book['title']} ({book['grade']})"
-        builder.button(text=title_btn, callback_data=f"book_info:{book['id']}")
+        title_btn = f"📖 {book['title']}"
+        builder.button(text=title_btn, callback_data=f"book_info:{book['id']}:{grade}")
 
     builder.adjust(1)
-    builder.row(InlineKeyboardButton(text="🔙 Fanlar ro'yxatiga qaytish", callback_data="back_to_subjects_lib"))
+    builder.row(InlineKeyboardButton(text="⬅️ Sinflar ro'yxatiga", callback_data=f"sub_lib:{subject_id}"))
+    builder.row(InlineKeyboardButton(text="🏠 Asosiy menyu", callback_data="back_to_main"))
+    return builder.as_markup()
+
+
+def get_empty_books_keyboard(subject_id: int) -> InlineKeyboardMarkup:
+    """Sinfda kitoblar mavjud bo'lmaganda ko'rsatiladigan menyu."""
+    builder = InlineKeyboardBuilder()
+    builder.row(InlineKeyboardButton(text="⬅️ Sinflar ro'yxatiga", callback_data=f"sub_lib:{subject_id}"))
+    builder.row(InlineKeyboardButton(text="🏠 Asosiy menyu", callback_data="back_to_main"))
     return builder.as_markup()
 
 
 def get_biology_grades_keyboard() -> InlineKeyboardMarkup:
-    """Biologiya fani bo'yicha sinflar tanlovi."""
-    builder = InlineKeyboardBuilder()
-    grades = [
-        ("🌿 5-sinf (Botanika)", 5),
-        ("🌿 6-sinf (Botanika)", 6),
-        ("🌿 7-sinf (Zoologiya - Interaktiv Testlar)", 7),
-        ("🌿 8-sinf (Odam va salomatlik)", 8),
-        ("🌿 9-sinf (Biologiya)", 9),
-        ("🌿 10-sinf (Umumiy Biologiya)", 10),
-        ("🌿 11-sinf (Umumiy Biologiya)", 11),
-    ]
-    for label, gr in grades:
-        builder.button(text=label, callback_data=f"bio_grade:{gr}")
-    builder.adjust(1)
-    builder.row(InlineKeyboardButton(text="🔙 Fanlar ro'yxatiga qaytish", callback_data="back_to_subjects_lib"))
-    return builder.as_markup()
+    """Biologiya fani bo'yicha sinflar tanlovi (eski havolalar mosligi uchun saqlangan)."""
+    return get_grades_keyboard(subject_id=4, action_prefix="lib_grade")
 
 
 
-def get_book_action_keyboard(book_id: int, subject_id: int, has_file: bool = False, file_url: Optional[str] = None) -> InlineKeyboardMarkup:
+def get_book_action_keyboard(
+    book_id: int,
+    subject_id: int,
+    grade: str = "",
+    has_file: bool = False,
+    file_url: Optional[str] = None
+) -> InlineKeyboardMarkup:
     """Kitobni ko'rish yoki yuklab olish harakatlari."""
     builder = InlineKeyboardBuilder()
 
     if has_file:
-        builder.button(text="📥 Kitobni yuklab olish (PDF)", callback_data=f"download_book:{book_id}")
-    elif file_url:
-        builder.button(text="🌐 Onlayn o'qish (Havola)", url=file_url)
-    else:
+        builder.button(text="📥 PDF faylni yuklab olish", callback_data=f"download_book:{book_id}")
+    if file_url:
+        builder.button(text="🌐 Rasmiy onlayn nusxa", url=file_url)
+    if not has_file and not file_url:
         builder.button(text="📥 Faylni qabul qilish", callback_data=f"download_book:{book_id}")
 
-    builder.row(InlineKeyboardButton(text="🔙 Kitoblar ro'yxatiga", callback_data=f"sub_lib:{subject_id}"))
+    builder.adjust(1)
+    if grade:
+        builder.row(InlineKeyboardButton(text="⬅️ Kitoblar ro'yxatiga", callback_data=f"lib_grade:{subject_id}:{grade}"))
+    else:
+        builder.row(InlineKeyboardButton(text="⬅️ Sinflar ro'yxatiga", callback_data=f"sub_lib:{subject_id}"))
+    builder.row(InlineKeyboardButton(text="🏠 Asosiy menyu", callback_data="back_to_main"))
     return builder.as_markup()
 
 

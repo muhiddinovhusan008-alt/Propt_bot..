@@ -28,6 +28,7 @@ from keyboards import (
     get_admin_main_keyboard,
     get_admin_cancel_keyboard,
     get_subjects_keyboard,
+    get_grades_keyboard,
     get_main_keyboard
 )
 from states import (
@@ -127,8 +128,8 @@ async def start_add_book(call: CallbackQuery, state: FSMContext):
 
     await state.set_state(AdminAddBookStates.waiting_for_subject)
     await call.message.edit_text(
-        "<b>📚 YANGI KITOB YUKLASH (1/6)</b>\n\n"
-        "Kitob qaysi fanga tegishli? Fanlardan birini tanlang:",
+        "<b>📚 YANGI KITOB YUKLASH (1/5)</b>\n\n"
+        "Kitob qaysi fanga tegishli? Kerakli fanni tanlang:",
         reply_markup=get_subjects_keyboard(action_prefix="adm_book_sub"),
         parse_mode="HTML"
     )
@@ -137,60 +138,69 @@ async def start_add_book(call: CallbackQuery, state: FSMContext):
 
 @router.callback_query(AdminAddBookStates.waiting_for_subject, F.data.startswith("adm_book_sub:"))
 async def process_book_subject(call: CallbackQuery, state: FSMContext):
-    """Kitob fani tanlandi, endi nomi so'raladi."""
+    """Kitob fani tanlandi, endi sinf so'raladi."""
     subject_id = int(call.data.split(":")[1])
-    await state.update_data(subject_id=subject_id)
+    subject = await get_subject_by_id(subject_id)
+    sub_name = subject["name"] if subject else "Fan"
+
+    await state.update_data(subject_id=subject_id, subject_name=sub_name)
+    await state.set_state(AdminAddBookStates.waiting_for_grade)
+
+    await call.message.edit_text(
+        f"<b>📚 YANGI KITOB YUKLASH (2/5)</b>\n\n"
+        f"Tanlangan fan: <b>{sub_name}</b>\n\n"
+        f"Kitob qaysi <b>sinfga</b> mo'ljallangan? Quyidagi sinflardan birini tanlang:",
+        reply_markup=get_grades_keyboard(subject_id=subject_id, action_prefix="adm_book_grade"),
+        parse_mode="HTML"
+    )
+    await call.answer()
+
+
+@router.callback_query(AdminAddBookStates.waiting_for_grade, F.data.startswith("adm_book_grade:"))
+async def process_book_grade_callback(call: CallbackQuery, state: FSMContext):
+    """Sinf inline tugma orqali tanlandi, kitob nomi so'raladi."""
+    parts = call.data.split(":")
+    grade = parts[2] if len(parts) > 2 else "Barcha sinflar"
+
+    await state.update_data(grade=grade)
     await state.set_state(AdminAddBookStates.waiting_for_title)
 
     await call.message.edit_text(
-        "<b>📚 YANGI KITOB YUKLASH (2/6)</b>\n\n"
-        "Kitob yoki darslikning <b>to'liq nomini</b> yozib yuboring (masalan: <i>Algebra - 8-sinf</i>):",
+        f"<b>📚 YANGI KITOB YUKLASH (3/5)</b>\n\n"
+        f"Tanlangan sinf: <b>{grade}</b>\n\n"
+        f"Kitob yoki darslikning <b>to'liq nomini</b> kiriting (masalan: <i>Algebra - 9-sinf</i>):",
         reply_markup=get_admin_cancel_keyboard(),
         parse_mode="HTML"
     )
     await call.answer()
 
 
-@router.message(AdminAddBookStates.waiting_for_title)
-async def process_book_title(message: Message, state: FSMContext):
-    """Kitob nomi kiritildi, muallif so'raladi."""
-    title = message.text.strip()
-    await state.update_data(title=title)
-    await state.set_state(AdminAddBookStates.waiting_for_author)
-
-    await message.answer(
-        "<b>📚 YANGI KITOB YUKLASH (3/6)</b>\n\n"
-        "Kitob <b>muallifi(lar)ni</b> yozing (yoki 'Noma'lum' deb yuboring):",
-        reply_markup=get_admin_cancel_keyboard(),
-        parse_mode="HTML"
-    )
-
-
-@router.message(AdminAddBookStates.waiting_for_author)
-async def process_book_author(message: Message, state: FSMContext):
-    """Muallif kiritildi, sinf so'raladi."""
-    author = message.text.strip()
-    await state.update_data(author=author)
-    await state.set_state(AdminAddBookStates.waiting_for_grade)
-
-    await message.answer(
-        "<b>📚 YANGI KITOB YUKLASH (4/6)</b>\n\n"
-        "Kitob qaysi <b>sinf yoki auditoriyaga</b> mo'ljallangan? (Masalan: <i>9-sinf</i> yoki <i>Barcha sinflar</i>):",
-        reply_markup=get_admin_cancel_keyboard(),
-        parse_mode="HTML"
-    )
-
-
 @router.message(AdminAddBookStates.waiting_for_grade)
-async def process_book_grade(message: Message, state: FSMContext):
-    """Sinf kiritildi, tavsif so'raladi."""
+async def process_book_grade_message(message: Message, state: FSMContext):
+    """Sinf matn ko'rinishida yuborilsa."""
     grade = message.text.strip()
     await state.update_data(grade=grade)
+    await state.set_state(AdminAddBookStates.waiting_for_title)
+
+    await message.answer(
+        f"<b>📚 YANGI KITOB YUKLASH (3/5)</b>\n\n"
+        f"Tanlangan sinf: <b>{grade}</b>\n\n"
+        f"Kitob yoki darslikning <b>to'liq nomini</b> kiriting (masalan: <i>Algebra - 9-sinf</i>):",
+        reply_markup=get_admin_cancel_keyboard(),
+        parse_mode="HTML"
+    )
+
+
+@router.message(AdminAddBookStates.waiting_for_title)
+async def process_book_title(message: Message, state: FSMContext):
+    """Kitob nomi kiritildi, qisqacha tavsif so'raladi."""
+    title = message.text.strip()
+    await state.update_data(title=title)
     await state.set_state(AdminAddBookStates.waiting_for_desc)
 
     await message.answer(
-        "<b>📚 YANGI KITOB YUKLASH (5/6)</b>\n\n"
-        "Kitob haqida <b>qisqacha tavsif</b> yozing (yoki '.' deb yuboring):",
+        "<b>📚 YANGI KITOB YUKLASH (4/5)</b>\n\n"
+        "Kitob haqida <b>qisqacha ma'lumot (tavsif)</b> kiriting (yoki '.' deb yuboring):",
         reply_markup=get_admin_cancel_keyboard(),
         parse_mode="HTML"
     )
@@ -198,7 +208,7 @@ async def process_book_grade(message: Message, state: FSMContext):
 
 @router.message(AdminAddBookStates.waiting_for_desc)
 async def process_book_desc(message: Message, state: FSMContext):
-    """Tavsif kiritildi, endi fayl yoki havola so'raladi."""
+    """Tavsif kiritildi, endi PDF fayl so'raladi."""
     desc = message.text.strip()
     if desc == ".":
         desc = ""
@@ -206,8 +216,8 @@ async def process_book_desc(message: Message, state: FSMContext):
     await state.set_state(AdminAddBookStates.waiting_for_file)
 
     await message.answer(
-        "<b>📚 YANGI KITOB YUKLASH (6/6)</b>\n\n"
-        "Endi kitobning <b>PDF faylini (Hujjat/Document)</b> yuboring yoki kitob yuklab olish havolasini yozing:\n"
+        "<b>📚 YANGI KITOB YUKLASH (5/5)</b>\n\n"
+        "Kitobning <b>PDF faylini (Hujjat/Document)</b> yuboring yoki yuklab olish havolasini yozing:\n"
         "<i>(Agar hozircha fayl bo'lmasa, 'faylsiz' deb yozishingiz mumkin)</i>",
         reply_markup=get_admin_cancel_keyboard(),
         parse_mode="HTML"
@@ -241,9 +251,11 @@ async def process_book_file(message: Message, state: FSMContext):
     await state.clear()
     await message.answer(
         f"✅ <b>Kitob muvaffaqiyatli saqlandi va elektron kutubxonaga qo'shildi!</b>\n\n"
+        f"📂 <b>Fan:</b> {escape_html(data.get('subject_name', 'Fan'))}\n"
+        f"🎓 <b>Sinf:</b> {escape_html(data.get('grade', ''))}\n"
         f"📖 <b>Nomi:</b> {escape_html(data['title'])}\n"
-        f"✍️ <b>Muallif:</b> {escape_html(data.get('author'))}\n"
-        f"🎓 <b>Sinfi:</b> {escape_html(data.get('grade'))}",
+        f"📝 <b>Tavsif:</b> {escape_html(data.get('description') or 'Kiritilmagan')}\n"
+        f"📎 <b>PDF Fayl:</b> {'Biriktirildi ✅' if file_id else (file_url if file_url else 'Faylsiz')}",
         reply_markup=get_admin_main_keyboard(),
         parse_mode="HTML"
     )

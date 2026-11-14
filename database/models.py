@@ -135,6 +135,24 @@ async def get_books_by_subject(subject_id: int) -> List[Dict[str, Any]]:
         return [dict(row) for row in rows]
 
 
+async def get_books_by_subject_and_grade(subject_id: int, grade: str) -> List[Dict[str, Any]]:
+    """Aynan bitta fan va bitta sinfga tegishli kitoblar ro'yxati."""
+    async with get_db() as db:
+        grade_clean = grade.strip()
+        grade_num = grade_clean.replace("-sinf", "").replace(" sinf", "").strip()
+        grade_pattern = f"{grade_num}-sinf"
+        cursor = await db.execute(
+            """SELECT b.*, s.name as subject_name 
+               FROM books b 
+               JOIN subjects s ON b.subject_id = s.id 
+               WHERE b.subject_id = ? AND (b.grade = ? OR b.grade = ? OR b.grade = ?)
+               ORDER BY b.id DESC""",
+            (subject_id, grade_clean, grade_pattern, grade_num)
+        )
+        rows = await cursor.fetchall()
+        return [dict(row) for row in rows]
+
+
 async def get_book_by_id(book_id: int) -> Optional[Dict[str, Any]]:
     """Aynan bitta kitob ma'lumotlari."""
     async with get_db() as db:

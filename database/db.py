@@ -202,38 +202,93 @@ async def seed_initial_data(db: aiosqlite.Connection):
         async for r in c:
             subject_map[r["code"]] = r["id"]
 
-    # 2. Namunaviy Kitoblar (10 ta fan uchun maxsus elektron kitoblar bilan)
+    # 2. Namunaviy Kitoblar (5-11-sinflar darsliklari)
     initial_books = [
         # Matematika
+        (subject_map["math"], "Matematika - 5-sinf", "M. Mirzaxmedov", "5-sinf", "Boshlang'ich algebra va arifmetika asoslari.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["math"], "Matematika - 6-sinf", "M. Mirzaxmedov, A. Rahimqoriyev", "6-sinf", "Oddiy va o'nli kasrlar, proporsiya, ratsional sonlar va geometriya asoslari.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
         (subject_map["math"], "Algebra - 7-sinf", "Sh. Alimov", "7-sinf", "Umumiy o'rta ta'lim maktablarining 7-sinfi uchun interaktiv darslik.", "Algebra_7_sinf.html", "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
         (subject_map["math"], "Geometriya - 8-sinf", "A. Rahimov", "8-sinf", "Planimetriya asoslari va teoremalar.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
-        (subject_map["math"], "Matematika - 5-sinf", "M. Mirzaxmedov", "5-sinf", "Boshlang'ich algebra va arifmetika asoslari.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["math"], "Algebra - 9-sinf", "Sh. Alimov, O. Xolmuhamedov", "9-sinf", "Kvadrat tenglamalar, tengsizliklar va progressiyalar.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["math"], "Algebra va analiz asoslari - 10-sinf", "M. Mirzaxmedov", "10-sinf", "Trigonometrik funksiyalar va hosila hisoblash asoslari.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["math"], "Algebra va analiz asoslari - 11-sinf", "M. Mirzaxmedov", "11-sinf", "Integral, stereometriya va ehtimollar nazariyasi.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+
         # Fizika
-        (subject_map["physics"], "Fizika - 9-sinf", "P. Habibullayev", "9-sinf", "Mexanika, kinematika va dinamika qonuniyatlari.", "Fizika_8_sinf.html", "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["physics"], "Fizika - 7-sinf", "P. Habibullayev, A. Boydedayev", "7-sinf", "Mexanik harakat, modda tuzilishi, zichlik va bosim.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["physics"], "Fizika - 8-sinf", "P. Habibullayev, A. Boydedayev", "8-sinf", "Issiqlik hodisalari, zaryadlar, Om qonuni va elektr zanjirlari.", "Fizika_8_sinf.html", "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["physics"], "Fizika - 9-sinf", "P. Habibullayev", "9-sinf", "Mexanika, kinematika va dinamika qonuniyatlari.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
         (subject_map["physics"], "Fizika - 10-sinf", "A. Qosimov", "10-sinf", "Molekulyar fizika va termodinamika asoslari.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["physics"], "Fizika - 11-sinf", "K. Tursunmetov", "11-sinf", "Elektromagnit to'lqinlar, optika va atom fizikasi.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+
         # Kimyo
+        (subject_map["chemistry"], "Kimyo - 7-sinf", "I. Asqarov, N. To'xtayev", "7-sinf", "Kimyoning boshlang'ich tushunchalari va moddalar tuzilishi.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
         (subject_map["chemistry"], "Kimyo - 8-sinf", "I. Asqarov", "8-sinf", "Anorganik kimyo asoslari, davriy jadval.", "Kimyo_8_sinf.html", "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
         (subject_map["chemistry"], "Kimyo - 9-sinf", "N. To'xtayev", "9-sinf", "Metall va metallmaslar kimyosi.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["chemistry"], "Organik kimyo - 10-sinf", "I. Asqarov", "10-sinf", "Uglevodorodlar, spirtlar va organik birikmalar.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["chemistry"], "Umumiy kimyo - 11-sinf", "I. Asqarov", "11-sinf", "Kimyoviy muvozanat, elektrokimyo va polimerlar.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+
         # Biologiya
-        (subject_map["biology"], "Zoologiya - 7-sinf", "O. Mavlonov", "7-sinf", "Hayvonot olami, interaktiv savollar va testlar.", "Zoologiya_7_sinf_interaktiv.html", "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["biology"], "Tabiatshunoslik va Botanika - 5-sinf", "O. Pratov", "5-sinf", "Tirik tabiatning xilma-xilligi va o'simliklar olami.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
         (subject_map["biology"], "Botanika - 6-sinf", "O. Pratov", "6-sinf", "O'simliklar dunyosi va ularning tuzilishi.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["biology"], "Zoologiya - 7-sinf", "O. Mavlonov", "7-sinf", "Hayvonot olami, interaktiv savollar va testlar.", "Zoologiya_7_sinf_interaktiv.html", "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
         (subject_map["biology"], "Odam va uning salomatligi - 8-sinf", "B. Aminov", "8-sinf", "Inson anatomiyasi va fiziologiyasi.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["biology"], "Biologiya (Sitologiya va genetika) - 9-sinf", "A. Zikiryayev", "9-sinf", "Hujayra biologiyasi va irsiyat asoslari.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["biology"], "Umumiy biologiya - 10-sinf", "A. G'ofurov", "10-sinf", "Tiriklikning molekulyar darajasi va evolyutsiya ta'limoti.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["biology"], "Umumiy biologiya va ekologiya - 11-sinf", "A. G'ofurov", "11-sinf", "Biotsenoz, ekotizimlar va biosferani muhofaza qilish.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+
         # Tarix
+        (subject_map["history"], "Tarixdan hikoyalar - 5-sinf", "T. Boboyev", "5-sinf", "Qadimgi Movarounnahr va ajdodlarimiz merosi.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["history"], "Qadimgi dunyo tarixi - 6-sinf", "A. Sagdullayev", "6-sinf", "Qadimgi Misr, Mesopotamiya, Qadimgi Yunoniston va Rim imperiyasi.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["history"], "O'zbekiston tarixi (O'rta asrlar) - 7-sinf", "A. Muhammadjonov", "7-sinf", "Somoniylar, Qoraxoniylar, Xorazmshohlar va Amir Temur davri.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
         (subject_map["history"], "O'zbekiston tarixi - 8-sinf", "A. Muhammadjonov", "8-sinf", "O'rta asrlarda O'zbekiston tarixi, Temuriylar davri.", "Ozbekiston_Tarixi_8_sinf.html", "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
         (subject_map["history"], "Jahon tarixi - 9-sinf", "U. Jo'rayev", "9-sinf", "Yangi davr jahon tarixi voqealari.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["history"], "O'zbekiston tarixi (XIX - XX asrlar) - 10-sinf", "Q. Rajabov", "10-sinf", "Turkiston mustamlakachilik davri va jadidchilik harakati.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["history"], "O'zbekistonning eng yangi tarixi - 11-sinf", "Q. Rajabov", "11-sinf", "Mustaqillik yillari taraqqiyoti va yangi O'zbekiston.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+
         # Ona tili
+        (subject_map["uzbek_lang"], "Ona tili - 5-sinf", "N. Mahmudov", "5-sinf", "Fonetika, leksikologiya va imlo qoidalari.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["uzbek_lang"], "Ona tili - 6-sinf", "A. Nurmonov", "6-sinf", "So'z yasalishi, asosiy so'z turkumlari grammatikasi.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
         (subject_map["uzbek_lang"], "Ona tili - 7-sinf", "N. Mahmudov", "7-sinf", "Morfologiya, fe'l va so'z turkumlari.", "Ona_Tili_7_sinf.html", "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["uzbek_lang"], "Ona tili - 8-sinf", "M. Qodirov", "8-sinf", "Sintaksis: so'z birikmasi va sodda gap tuzilishi.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
         (subject_map["uzbek_lang"], "Ona tili - 9-sinf", "A. Nurmonov", "9-sinf", "Qo'shma gap sintaksisi va tinish belgilari.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["uzbek_lang"], "Ona tili va nutq madaniyati - 10-sinf", "N. Mahmudov", "10-sinf", "Stilistika (uslubiyat) va adabiy nutq me'yorlari.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["uzbek_lang"], "Ona tili - 11-sinf", "N. Mahmudov", "11-sinf", "Matn tilshunosligi va nutqiy kompetensiyalar.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+
         # Adabiyot
+        (subject_map["literature"], "Adabiyot - 5-sinf", "S. Ahmedov", "5-sinf", "O'zbek xalq og'zaki ijodi, ertaklar va masallar.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["literature"], "Adabiyot - 6-sinf", "S. Ahmedov", "6-sinf", "Alisher Navoiy va Bobur g'azallari, dostonlar.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["literature"], "Adabiyot - 7-sinf", "Q. Yo'ldoshev", "7-sinf", "Mumtoz va zamonaviy o'zbek she'riyati va nasri.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
         (subject_map["literature"], "Adabiyot - 8-sinf", "S. Ahmedov", "8-sinf", "Mumtoz va zamonaviy o'zbek adabiyoti durdonalari.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
-        (subject_map["literature"], "O'tkan kunlar", "Abdulla Qodiriy", "Barcha sinflar", "O'zbek milliy romanchiligining ilk durdona romani.", "Otkan_Kunlar_Abdulla_Qodiriy.html", "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["literature"], "Adabiyot - 9-sinf", "Q. Yo'ldoshev, B. Qosimov", "9-sinf", "Jadid adabiyoti durdonalari va romanlar tahlili.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["literature"], "O'zbek adabiyoti - 10-sinf", "B. Qosimov", "10-sinf", "Abdulla Qodiriy 'O'tkan kunlar', Fitrat va Cho'lpon asarlari.", "Otkan_Kunlar_Abdulla_Qodiriy.html", "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["literature"], "Jahon va o'zbek adabiyoti - 11-sinf", "B. Qosimov", "11-sinf", "Jahon va o'zbek adabiyoti durdonalari.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+
         # Ingliz tili
-        (subject_map["english"], "English Grammar in Use", "Raymond Murphy", "Barcha sinflar", "Ingliz tili grammatikasini o'rganish uchun to'liq interaktiv qo'llanma.", "English_Grammar_in_Use.html", "https://dictionary.cambridge.org/"),
-        (subject_map["english"], "English - Guess What! 5-sinf", "Cambridge / O'zbekiston", "5-sinf", "Ingliz tili boshlang'ich grammatikasi va leksika.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["english"], "English - Guess What! 5-sinf", "Cambridge / O'zbekiston", "5-sinf", "Ingliz tili boshlang'ich grammatikasi va leksika.", None, "https://dictionary.cambridge.org/"),
+        (subject_map["english"], "English - 6-sinf", "Cambridge / O'zbekiston", "6-sinf", "English for 6th grade: reading and basic tenses.", None, "https://dictionary.cambridge.org/"),
+        (subject_map["english"], "English - Teen World 7-sinf", "Cambridge / O'zbekiston", "7-sinf", "Communication, modal verbs and reading.", None, "https://dictionary.cambridge.org/"),
+        (subject_map["english"], "English - 8-sinf", "Cambridge / O'zbekiston", "8-sinf", "Intermediate grammar and speaking modules.", "English_Grammar_in_Use.html", "https://dictionary.cambridge.org/"),
+        (subject_map["english"], "English - Prepare! 9-sinf", "Cambridge / O'zbekiston", "9-sinf", "Prepare! course: passive voice and conditionals.", None, "https://dictionary.cambridge.org/"),
+        (subject_map["english"], "English for Success - 10-sinf", "Cambridge / O'zbekiston", "10-sinf", "Academic reading, essay writing and idioms.", None, "https://dictionary.cambridge.org/"),
+        (subject_map["english"], "English B2 Level - 11-sinf", "Cambridge / O'zbekiston", "11-sinf", "B2 level grammar and exam preparation.", None, "https://dictionary.cambridge.org/"),
+
         # Geografiya
+        (subject_map["geography"], "Tabiiy geografiya boshlang'ich kursi - 5-sinf", "P. G'ulomov", "5-sinf", "Yerning shakli va o'lchamlari, xaritalar va globus.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["geography"], "Materiklar va okeanlar geografiyasi - 6-sinf", "P. G'ulomov", "6-sinf", "Qit'alar tabiati va okeanlar relyingi.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
         (subject_map["geography"], "Materiklar va okeanlar tabiiy geografiyasi - 7-sinf", "P. G'ulomov", "7-sinf", "Yer shari tabiiy zonalari va qit'alari.", "Geografiya_7_sinf.html", "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["geography"], "O'zbekiston tabiiy geografiyasi - 8-sinf", "P. G'ulomov", "8-sinf", "O'zbekiston relyefi, iqlimi va daryolari.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["geography"], "O'zbekiston iqtisodiy va ijtimoiy geografiyasi - 9-sinf", "A. Soliyev", "9-sinf", "O'zbekiston viloyatlari, sanoat tarmoqlari va transport.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["geography"], "Jahon ijtimoiy-iqtisodiy geografiyasi - 10-sinf", "A. Qayumov", "10-sinf", "Dunyo mamlakatlari iqtisodiyoti va xomashyo.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["geography"], "Global geografiya va geosiyosat - 11-sinf", "A. Qayumov", "11-sinf", "Globallashuv, ekologiya va geosiyosat.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+
         # Informatika
-        (subject_map["informatics"], "Informatika va AT - 8-sinf", "B. Boltayev", "8-sinf", "Algoritmlash va Python dasturlash tili asoslari.", "Informatika_Python_8_sinf.html", "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari")
+        (subject_map["informatics"], "Informatika va axborot texnologiyalari - 5-sinf", "B. Boltayev", "5-sinf", "Kompyuter qurilmalari va dasturlar tushunchasi.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["informatics"], "Informatika va AT - 6-sinf", "B. Boltayev", "6-sinf", "Word matn muharriri va axborot xavfsizligi.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["informatics"], "Informatika va AT - 7-sinf", "B. Boltayev", "7-sinf", "Excel elektron jadvallari va taqdimotlar.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["informatics"], "Informatika va AT - 8-sinf", "B. Boltayev", "8-sinf", "Algoritmlash va Python dasturlash tili asoslari.", "Informatika_Python_8_sinf.html", "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["informatics"], "Informatika va AT (Veb dasturlash) - 9-sinf", "B. Boltayev", "9-sinf", "HTML5 va CSS asoslari, veb-sahifalar yaratish.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["informatics"], "Informatika va AT (Ma'lumotlar bazasi) - 10-sinf", "B. Boltayev", "10-sinf", "Relyatsion ma'lumotlar bazasi va SQL tili asoslari.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari"),
+        (subject_map["informatics"], "Informatika va axborot xavfsizligi - 11-sinf", "B. Boltayev", "11-sinf", "Kiberxavfsizlik va axborot tizimlari.", None, "https://ziyouz.com/kutubxona/category/11-maktab-darsliklari")
     ]
 
     for sub_id, title, author, grade, desc, file_id, file_url in initial_books:
