@@ -63,7 +63,8 @@ async def on_startup(bot: Bot):
             await bot.set_webhook(
                 url=full_webhook_url,
                 secret_token=WEBHOOK_SECRET,
-                drop_pending_updates=True
+                drop_pending_updates=False,
+                allowed_updates=["message", "callback_query"]
             )
             logger.info("Webhook muvaffaqiyatli o'rnatildi!")
         except Exception as e:
@@ -92,12 +93,8 @@ async def on_startup(bot: Bot):
 async def on_shutdown(bot: Bot):
     """Bot to'xtatilganda bajariladigan amallar."""
     logger.info("Bot to'xtatilmoqda...")
-    if WEBHOOK_URL:
-        try:
-            await bot.delete_webhook(drop_pending_updates=True)
-            logger.info("Webhook o'chirildi.")
-        except Exception as e:
-            logger.warning(f"Webhook o'chirishda xatolik: {e}")
+    # Izoh: Webhook ataylab o'chirilmaydi, yangi deploy yoki qayta yuklanish paytida
+    # kelgan Telegram yangilanishlari (xabarlar) yo'qolmasligi uchun saqlab qolinadi.
 
     for admin_id in ADMIN_IDS:
         try:

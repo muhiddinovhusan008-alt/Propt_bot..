@@ -40,8 +40,17 @@ BOOKS_DIR.mkdir(parents=True, exist_ok=True)
 PROXY_URL = os.getenv("PROXY_URL", "").strip() or None
 
 # ==================== WEBHOOK VA VIRTUAL SERVER SOZLAMALARI ====================
-# Render avtomatik ravishda RENDER_EXTERNAL_URL taqdim etadi (masalan: https://bilim-bot.onrender.com)
+# Render muhitini aniqlash va Webhook URL shakllantirish
+IS_RENDER = os.getenv("RENDER", "").lower() in ("true", "1") or bool(os.getenv("RENDER_EXTERNAL_HOSTNAME")) or bool(os.getenv("RENDER_SERVICE_ID"))
+RENDER_EXTERNAL_HOSTNAME = os.getenv("RENDER_EXTERNAL_HOSTNAME", "").strip()
 RENDER_EXTERNAL_URL = os.getenv("RENDER_EXTERNAL_URL", "").strip()
+
+if not RENDER_EXTERNAL_URL and RENDER_EXTERNAL_HOSTNAME:
+    RENDER_EXTERNAL_URL = f"https://{RENDER_EXTERNAL_HOSTNAME}"
+
+if not RENDER_EXTERNAL_URL and IS_RENDER:
+    RENDER_EXTERNAL_URL = "https://propt-bot-2.onrender.com"
+
 WEBHOOK_URL = os.getenv("WEBHOOK_URL", "").strip() or RENDER_EXTERNAL_URL
 
 WEBHOOK_PATH = os.getenv("WEBHOOK_PATH", "/webhook").strip()
