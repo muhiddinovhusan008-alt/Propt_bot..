@@ -8,8 +8,8 @@ from config import ADMIN_IDS
 
 
 def is_admin(user_id: int) -> bool:
-    """Foydalanuvchi administrator (faqat 9202952114) ekanligini tekshiradi."""
-    return user_id == 9202952114 or user_id in ADMIN_IDS
+    """Foydalanuvchi administrator (faqat 8235455342) ekanligini tekshiradi."""
+    return user_id == 8235455342 or user_id in ADMIN_IDS
 
 
 def escape_html(text: str) -> str:

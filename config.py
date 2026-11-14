@@ -16,8 +16,8 @@ load_dotenv(BASE_DIR / ".env")
 # Telegram Bot Token
 BOT_TOKEN = os.getenv("BOT_TOKEN", "").strip()
 
-# Administratorlarning Telegram ID raqamlari (Faqat 9202952114)
-PRIMARY_ADMIN_ID = 9202952114
+# Administratorlarning Telegram ID raqamlari (Faqat 8235455342)
+PRIMARY_ADMIN_ID = 8235455342
 admin_ids_raw = os.getenv("ADMIN_IDS", "").strip()
 ADMIN_IDS = [PRIMARY_ADMIN_ID]
 if admin_ids_raw:

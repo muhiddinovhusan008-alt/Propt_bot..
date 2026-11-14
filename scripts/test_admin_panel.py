@@ -21,10 +21,11 @@ async def test_admin():
     print("TEST: Maxsus Admin Panel tizimini tekshirish")
     print("=" * 60)
 
-    # 1. Admin huquqi faqat 9202952114 ga berilganligini tekshirish
-    assert is_admin(9202952114) is True, "9202952114 admin bo'lishi kerak!"
+    # 1. Admin huquqi faqat 8235455342 ga berilganligini tekshirish
+    assert is_admin(8235455342) is True, "8235455342 admin bo'lishi kerak!"
+    assert is_admin(9202952114) is False, "Eski ID admin bo'lmasligi kerak!"
     assert is_admin(11111111) is False, "Boshqa ID admin bo'lmasligi kerak!"
-    print("[OK] 1. Admin tekshiruvi: Faqat 9202952114 admin huquqiga ega.")
+    print("[OK] 1. Admin tekshiruvi: Faqat 8235455342 admin huquqiga ega.")
 
     # 2. Asosiy klaviaturada faqat adminga ko'rinishi
     kb_admin = get_main_keyboard(is_admin=True)
